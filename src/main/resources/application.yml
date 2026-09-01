@@ -1,0 +1,35 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: kafka-webhook-demo
+
+  kafka:
+    bootstrap-servers: localhost:9092, localhost:9093
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      # --- Durability / delivery guarantee knobs (Chapter 2 focus) ---
+      # acks=all -> leader waits for ALL in-sync replicas to ack before confirming the write.
+      # Strongest durability guarantee Kafka offers. Slower than acks=1 or acks=0.
+      acks: all
+
+      # Idempotent producer: prevents duplicate messages if the producer retries
+      # a send after a network blip (e.g., ack was lost but the write actually succeeded).
+      # Requires acks=all under the hood - Spring/Kafka enforces this automatically.
+      properties:
+        enable.idempotence: true
+        # Batching knobs - throughput vs latency tradeoff, we'll tune these live in Chapter 2.
+        linger.ms: 50
+        batch.size: 16384
+        # Retries on transient errors (e.g., leader election in progress)
+        retries: 3
+        max.in.flight.requests.per.connection: 5
+
+logging:
+  level:
+    org.apache.kafka: WARN
+    org.springframework.kafka: INFO
