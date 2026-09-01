@@ -1,6 +1,8 @@
 package com.ajay.kafkademo.consumer;
 
 import com.ajay.kafkademo.model.OrderEvent;
+import com.ajay.kafkademo.webhook.WebhookSenderService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -13,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Slf4j
+@AllArgsConstructor
 public class OrderEventConsumer {
 
     /**
@@ -25,6 +28,8 @@ public class OrderEventConsumer {
      * real system needs a durable store so idempotency survives a crash too.
      */
     private final Set<String> processedEventKeys = ConcurrentHashMap.newKeySet();
+    private final WebhookSenderService webhookSenderService;
+
 
     @KafkaListener(topics = "order-events", groupId = "order-processing-group")
     public void handleOrderEvent(ConsumerRecord<String, OrderEvent> record, Acknowledgment ack) {
@@ -54,10 +59,14 @@ public class OrderEventConsumer {
     }
 
     private void processEvent(OrderEvent event) {
-        // Placeholder for real business logic. Throws on demand so we can
-        // trigger the retry -> DLT flow later just by sending status=FAIL_ME.
+
         if ("FAIL_ME".equals(event.getStatus())) {
             throw new RuntimeException("Simulated processing failure for " + event.getOrderId());
         }
+
+        webhookSenderService.sendWebhook(event);
+
     }
+
+
 }

@@ -2,6 +2,8 @@ package com.ajay.kafkademo.controller;
 
 import com.ajay.kafkademo.model.OrderEvent;
 import com.ajay.kafkademo.producer.OrderEventProducer;
+import com.ajay.kafkademo.outbox.OutboxService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,9 +19,11 @@ import java.util.concurrent.CompletableFuture;
 public class OrderController {
 
     private final OrderEventProducer orderEventProducer;
+    private final OutboxService outboxService;
 
-    public OrderController(OrderEventProducer orderEventProducer) {
+    public OrderController(OrderEventProducer orderEventProducer, OutboxService outboxService) {
         this.orderEventProducer = orderEventProducer;
+        this.outboxService = outboxService;
     }
 
     /**
@@ -28,6 +32,14 @@ public class OrderController {
      *   -H "Content-Type: application/json" \
      *   -d '{"orderId":"order-1","status":"CREATED"}'
      */
+
+    @PostMapping("/outbox")
+    public ResponseEntity<String> presistOutboxEvent(@RequestBody OrderEvent orderEvent) {
+        outboxService.recordOutboxEvent(orderEvent);
+        return ResponseEntity.status(HttpStatus.OK).body("Outbox Event Stored in Outbox");
+
+    }
+
     @PostMapping
     public ResponseEntity<String> publishOrderEvent(@RequestBody OrderEvent event) {
         orderEventProducer.sendOrderEvent(event);

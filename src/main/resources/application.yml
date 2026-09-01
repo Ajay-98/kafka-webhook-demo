@@ -28,8 +28,20 @@ spring:
         # Retries on transient errors (e.g., leader election in progress)
         retries: 3
         max.in.flight.requests.per.connection: 5
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orderdb
+    username: ajay
+    password: ajay123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
 logging:
   level:
     org.apache.kafka: WARN
     org.springframework.kafka: INFO
+
+webhook:
+  receiver-url: http://localhost:8082/webhooks/order-events
+  shared-secret: "demo-shared-secret-change-me"
